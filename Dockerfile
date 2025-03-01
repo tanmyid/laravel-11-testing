@@ -1,36 +1,39 @@
-FROM php:8.2-fpm
+# Base image
+FROM php:8.2-fpm-alpine
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
+    bash \
     git \
     curl \
     libpng-dev \
-    libonig-dev \
-    libxml2-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    oniguruma-dev \
+    libzip-dev \
     zip \
     unzip
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Get latest Composer
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy existing application directory contents
-COPY . /var/www/html
+# Copy application files
+COPY . .
 
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data . /var/www/html
+# Install PHP dependencies
+RUN composer install --optimize-autoloader --no-dev
 
-# Change current user to www-data
-USER www-data
+# Set permissions
+RUN chmod -R 775 storage bootstrap/cache
 
-# Expose port 9000 and start php-fpm server
+# Expose port (optional, for development)
 EXPOSE 9000
+
+# Start PHP-FPM
 CMD ["php-fpm"]
