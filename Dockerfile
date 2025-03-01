@@ -1,21 +1,26 @@
-# Base image
-FROM php:8.2-fpm-alpine
+# Gunakan image PHP dengan Alpine
+FROM php:8.3-fpm-alpine
 
-# Install dependencies
+# Install dependensi yang dibutuhkan
 RUN apk add --no-cache \
     bash \
-    git \
-    curl \
+    sqlite \
+    sqlite-dev \
+    oniguruma-dev \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
-    oniguruma-dev \
-    libzip-dev \
     zip \
-    unzip
+    unzip \
+    curl \
+    git \
+    nodejs \
+    npm \
+    supervisor
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+# Install ekstensi PHP yang dibutuhkan
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install pdo pdo_sqlite mbstring gd
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -23,17 +28,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
+# Copy file Laravel ke dalam container
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev
+# Set permission
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Set permissions
-RUN chmod -R 775 storage bootstrap/cache
-
-# Expose port (optional, for development)
+# Expose port untuk PHP-FPM
 EXPOSE 9000
 
-# Start PHP-FPM
+# Jalankan supervisor sebagai proses utama
 CMD ["php-fpm"]
