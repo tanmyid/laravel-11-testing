@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: laravel-11-testing
+        ports:
+            - "9000:9000"
+        volumes:
+            - .:/var/www/html
+        environment:
+            - DB_CONNECTION=sqlite
+            - DB_DATABASE=/var/www/html/database/database.sqlite
+        depends_on:
+            - db
+        networks:
+            - laravel-network
+
+networks:
+    laravel-network:
+        driver: bridge
